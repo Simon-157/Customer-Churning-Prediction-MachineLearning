@@ -32,6 +32,18 @@ def compute_predictions_dataframe(explore_data, classifier, x_test):
 
 
 def test_classifier(x_train, y_train, X_validate, y_validate, x_test, y_test):
+    """
+    The function takes in training and testing data, fits a random forest classifier to the training
+    data, and returns the classifier and a dataframe containing the evaluation metrics
+
+    :param x_train: the training data
+    :param y_train: The target variable for the training set
+    :param X_validate: The validation set
+    :param y_validate: the validation set's target values
+    :param x_test: the test set
+    :param y_test: the actual values of the target variable
+    :return: A tuple of the classifier and the test results dataframe.
+    """
     classifier = RandomForestClassifier(random_state = 123, max_depth = 10, min_samples_leaf = 5)
 
     classifier.fit(x_train, y_train)
@@ -60,9 +72,9 @@ def test_classifier(x_train, y_train, X_validate, y_validate, x_test, y_test):
         'Recall': tp / (tp + fn),
         'Training Score': train_score,
         'Precision': tp / (tp + fp),
-        'Validate Score': validate_score,
-        'Test Score': test_score,
-        'Score Difference': validate_score - test_score
+        'Validate Acc Score': validate_score,
+        'Test Acc Score': test_score,
+        'Acc Score Difference': validate_score - test_score
     }
 
     test_results_df = DataFrame([eval_params])

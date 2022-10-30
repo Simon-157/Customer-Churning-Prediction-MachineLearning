@@ -28,7 +28,6 @@ def process_unencoded_data(data):
     """
     data.drop_duplicates(inplace = True)
     data = data[data.tenure > 0].copy()
-
     data.TotalCharges = data.TotalCharges.str.strip()
     data.TotalCharges = data.TotalCharges.str.replace('[$,]','', regex = True)
     data.TotalCharges = data.TotalCharges.astype(float)
@@ -38,49 +37,34 @@ def process_unencoded_data(data):
 
     for column in categorical_columns:
         data[column] = data[column].str.strip()
-
     data.drop(columns = ['InternetService', 'Contract', 'PaymentMethod'], inplace = True)
-
-
     return train_validate_test_split(data, 'Churn')
 
-def yes_or_no(value):
+def binary_to_Y_N(value):
     if value == 1:
         return 'Yes'
     elif value == 0:
         return 'No'
 
 def process_clean_data(data):
-
     data.drop_duplicates(inplace = True)
     data = data[data.tenure > 0].copy()
-
     data.TotalCharges= data.TotalCharges.str.strip()
     data.TotalCharges= data.TotalCharges.str.replace('[$,]','', regex = True)
     data.TotalCharges= data.TotalCharges.astype(float)
+    categorical_columns = data.select_dtypes('object').columns[1:]
 
-    cat_cols = data.select_dtypes('object').columns[1:]
 
-
-    for col in cat_cols:
+    for col in categorical_columns:
         data[col] = data[col].str.strip()
-
     data.drop(columns = ['customerID','InternetService', 'Contract', 'PaymentMethod'], inplace = True)
-
     data.SeniorCitizen = data.SeniorCitizen.astype(object)
-    data.SeniorCitizen = data.SeniorCitizen.apply(yes_or_no)
+    data.SeniorCitizen = data.SeniorCitizen.apply(binary_to_Y_N)
+    categorical_columns = data.select_dtypes('object').columns
 
-
-    cat_cols = data.select_dtypes('object').columns
-
-
-    dummy_df = pd.get_dummies(data[cat_cols], drop_first = True)
+    dummy_df = pd.get_dummies(data[categorical_columns], drop_first = True)
     data = pd.concat([data, dummy_df], axis = 1)
-
-
-    data = data.drop(columns = cat_cols)
-
-    #Rename churn_yes
+    data = data.drop(columns = categorical_columns)
     data.rename(columns = {'Churn_Yes':'Churn'}, inplace = True)
 
     return train_validate_test_split(data, 'Churn')

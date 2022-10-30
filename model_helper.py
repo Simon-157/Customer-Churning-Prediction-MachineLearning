@@ -26,29 +26,21 @@ def compare_models(x_train, y_train, x_validate, y_validate):
     :param y_validate: the actual values of the target variable
     :return: A dataframe of all the model values
     """
-    model_dicts = []
-
+    models_cont = []
 
     for num in range(2, 11):
         for val in range(1, 20):
-            classifier = RandomForestClassifier(random_state = 123, max_depth = num, min_samples_leaf = val)
-
+            classifier = RandomForestClassifier(random_state = 125, max_depth = num, min_samples_leaf = val)
             classifier.fit(x_train, y_train)
-
-
             train_score = classifier.score(x_train, y_train)
-
             predictions = classifier.predict(x_validate)
 
-            #Use confusion matrix to find TP, FP, TN, FN
             tp = confusion_matrix(y_validate, predictions)[1][1]
             fp = confusion_matrix(y_validate, predictions)[0][1]
             tn = confusion_matrix(y_validate, predictions)[0][0]
             fn = confusion_matrix(y_validate, predictions)[1][0]
-            #Score the model on validate data
             validate_score = classifier.score(x_validate, y_validate)
 
-            #Create a dictionary for model values
             output = {
                 'max_depth':num,
                 'min_samples_leaf': val,
@@ -58,35 +50,40 @@ def compare_models(x_train, y_train, x_validate, y_validate):
                 'False Negatvies': fn,
                 'Precision': tp / (tp + fp),
                 'Recall': tp / (tp + fn),
-                'Training Score': train_score,
-                'Validate Score': validate_score,
-                'Score Difference': train_score - validate_score
+                'Training Acc Score': train_score,
+                'Validate Acc Score': validate_score,
+                'Acc Score Difference': train_score - validate_score
             }
-
-            model_dicts.append(output)
-
-    return pd.DataFrame(model_dicts)
+            models_cont.append(output)
+    return pd.DataFrame(models_cont)
 
 
 def test_classifier(x_train, y_train, X_validate, y_validate, x_test, y_test):
+    """
+    The function takes in the training, validation, and test data and fits a random forest classifier to
+    the training data. It then scores the model on the training, validation, and test data. It then
+    predicts the test data and creates a confusion matrix. It then creates a dictionary of the
+    evaluation parameters and returns the classifier and the dataframe of the evaluation parameters
+
+    :param x_train: the training data
+    :param y_train: the target variable for the training set
+    :param X_validate: The validation set
+    :param y_validate: the target variable for the validation set
+    :param x_test: the test data
+    :param y_test: the actual values of the target variable
+    :return: The classifier and the test_df
+    """
 
     classifier = RandomForestClassifier(random_state = 123, max_depth = 10, min_samples_leaf = 5)
-
     classifier.fit(x_train, y_train)
-
     train_score = classifier.score(x_train, y_train)
-
     validate_score = classifier.score(X_validate, y_validate)
-
     test_score = classifier.score(x_test, y_test)
-
     clf_preds = classifier.predict(x_test)
-
-    tp = confusion_matrix(y_test, clf_preds)[1][1]
-    fp = confusion_matrix(y_test, clf_preds)[0][1]
     tn = confusion_matrix(y_test, clf_preds)[0][0]
     fn = confusion_matrix(y_test, clf_preds)[1][0]
-
+    tp = confusion_matrix(y_test, clf_preds)[1][1]
+    fp = confusion_matrix(y_test, clf_preds)[0][1]
 
     eval_params = {
         'max_depth':10,
@@ -97,43 +94,12 @@ def test_classifier(x_train, y_train, X_validate, y_validate, x_test, y_test):
         'False Negatvies': fn,
         'Precision': tp / (tp + fp),
         'Recall': tp / (tp + fn),
-        'Training Score': train_score,
-        'Validate Score': validate_score,
-        'Test Score': test_score,
-        'Score Difference': validate_score - test_score
+        'Training Acc Score': train_score,
+        'Validate Acc Score': validate_score,
+        'Test Acc Score': test_score,
+        'Acc Score Difference': validate_score - test_score
     }
 
     test_results = [eval_params]
-
     test_df = pd.DataFrame(test_results)
-
     return classifier, test_df
-
-
-def compute_predictions_dataframe(explore_data, classifier, X_test):
-    """
-    The function takes in the explore data, the classifier, and the X_test data, and returns a dataframe
-    with the customerId, the probability of churn, the probability of not churning, and the predicted
-    churn value
-
-    :param explore_data: the dataframe that contains the customerId and the target variable
-    :param classifier: the model you want to use to make predictions
-    :param X_test: the test dataframe
-    :return: A dataframe with the customerId, probability_churned, probability_not_churned, and
-    predicted columns.
-    """
-
-    churn_proba = classifier.predict_proba(X_test)
-    probabilities = pd.DataFrame(churn_proba, columns = ['probability_not_churned', 'probability_churned'])
-    reset_explore_data = explore_data.reset_index()
-    reset_explore_data['probability_not_churned'] = probabilities['probability_not_churned']
-    reset_explore_data['probability_churned'] = probabilities['probability_churned']
-
-
-    predictions = classifier.predict(X_test)
-    reset_explore_data['predicted'] = predictions
-
-
-    results_dataframe = reset_explore_data[['customerId', 'probability_churned', 'probability_not_churned', 'predicted']]
-
-    return results_dataframe
