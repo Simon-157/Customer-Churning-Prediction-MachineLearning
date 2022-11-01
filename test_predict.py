@@ -17,17 +17,14 @@ def compute_predictions_dataframe(explore_data, classifier, x_test):
     """
 
     churn_proba = classifier.predict_proba(x_test)
-    probabilities = DataFrame(churn_proba, columns = ['probability_not_churned', 'probability_churned'])
+    probabilities = DataFrame(churn_proba, columns = ['probabilityNotChurned', 'probabilityChurned'])
     reset_explore_data = explore_data.reset_index()
-    reset_explore_data['probability_not_churned'] = probabilities['probability_not_churned']
-    reset_explore_data['probability_churned'] = probabilities['probability_churned']
-
-
+    reset_explore_data['probabilityNotChurned'] = probabilities['probabilityNotChurned']
+    reset_explore_data['probabilityChurned'] = probabilities['probabilityChurned']
     predictions = classifier.predict(x_test)
     reset_explore_data['predicted'] = predictions
 
-
-    results_dataframe = reset_explore_data[['customerID', 'probability_churned', 'probability_not_churned', 'predicted']]
+    results_dataframe = reset_explore_data[['customerID', 'probabilityChurned', 'probabilityNotChurned', 'predicted']]
     return results_dataframe
 
 
@@ -45,15 +42,10 @@ def test_classifier(x_train, y_train, X_validate, y_validate, x_test, y_test):
     :return: A tuple of the classifier and the test results dataframe.
     """
     classifier = RandomForestClassifier(random_state = 123, max_depth = 10, min_samples_leaf = 5)
-
     classifier.fit(x_train, y_train)
-
     train_score = classifier.score(x_train, y_train)
-
     validate_score = classifier.score(X_validate, y_validate)
-
     test_score = classifier.score(x_test, y_test)
-
     classifier_predictions = classifier.predict(x_test)
 
     tp = confusion_matrix(y_test, classifier_predictions)[1][1]
@@ -76,9 +68,7 @@ def test_classifier(x_train, y_train, X_validate, y_validate, x_test, y_test):
         'Test Acc Score': test_score,
         'Acc Score Difference': validate_score - test_score
     }
-
     test_results_df = DataFrame([eval_params])
-
     return classifier, test_results_df
 
 

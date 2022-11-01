@@ -6,11 +6,16 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 
 def get_control_score(x_train, y_train):
-    mode = y_train.value_counts().idxmax()
+    """
+    It creates a dummy classifier that always predicts the most frequent class in the training set.
 
+    :param x_train: the training data
+    :param y_train: the target variable
+    :return: The accuracy of the model
+    """
+    mode = y_train.value_counts().idxmax()
     control_model = DummyClassifier(strategy = 'constant', constant = mode)
     control_model.fit(x_train, y_train)
-
     return control_model.score(x_train, y_train)
 
 
@@ -29,8 +34,8 @@ def compare_models(x_train, y_train, x_validate, y_validate):
     models_cont = []
 
     for num in range(2, 11):
-        for val in range(1, 20):
-            classifier = RandomForestClassifier(random_state = 125, max_depth = num, min_samples_leaf = val)
+        for val in range(1, 23):
+            classifier = RandomForestClassifier(random_state = 126, max_depth = num, min_samples_leaf = val)
             classifier.fit(x_train, y_train)
             train_score = classifier.score(x_train, y_train)
             predictions = classifier.predict(x_validate)
@@ -40,10 +45,10 @@ def compare_models(x_train, y_train, x_validate, y_validate):
             tn = confusion_matrix(y_validate, predictions)[0][0]
             fn = confusion_matrix(y_validate, predictions)[1][0]
             validate_score = classifier.score(x_validate, y_validate)
-
-            output = {
-                'max_depth':num,
-                'min_samples_leaf': val,
+            test_score = classifier.score(x_train, y_train)
+            eval_params = {
+                'max_depth':10,
+                'min_samples_leaf': 5,
                 'True Positves': tp,
                 'False Positives': fp,
                 'True Negatives': tn,
@@ -52,13 +57,14 @@ def compare_models(x_train, y_train, x_validate, y_validate):
                 'Recall': tp / (tp + fn),
                 'Training Acc Score': train_score,
                 'Validate Acc Score': validate_score,
-                'Acc Score Difference': train_score - validate_score
+                'Test Acc Score': test_score,
+                'Acc Score Difference': validate_score - test_score
             }
-            models_cont.append(output)
+            models_cont.append(eval_params)
     return pd.DataFrame(models_cont)
 
 
-def test_classifier(x_train, y_train, X_validate, y_validate, x_test, y_test):
+def test_classifier(x_train, y_train, x_validate, y_validate, x_test, y_test):
     """
     The function takes in the training, validation, and test data and fits a random forest classifier to
     the training data. It then scores the model on the training, validation, and test data. It then
@@ -77,13 +83,14 @@ def test_classifier(x_train, y_train, X_validate, y_validate, x_test, y_test):
     classifier = RandomForestClassifier(random_state = 123, max_depth = 10, min_samples_leaf = 5)
     classifier.fit(x_train, y_train)
     train_score = classifier.score(x_train, y_train)
-    validate_score = classifier.score(X_validate, y_validate)
+    validate_score = classifier.score(x_validate, y_validate)
     test_score = classifier.score(x_test, y_test)
-    clf_preds = classifier.predict(x_test)
-    tn = confusion_matrix(y_test, clf_preds)[0][0]
-    fn = confusion_matrix(y_test, clf_preds)[1][0]
-    tp = confusion_matrix(y_test, clf_preds)[1][1]
-    fp = confusion_matrix(y_test, clf_preds)[0][1]
+    predictions = classifier.predict(x_validate)
+
+    tp = confusion_matrix(y_validate, predictions)[1][1]
+    fp = confusion_matrix(y_validate, predictions)[0][1]
+    tn = confusion_matrix(y_validate, predictions)[0][0]
+    fn = confusion_matrix(y_validate, predictions)[1][0]
 
     eval_params = {
         'max_depth':10,
